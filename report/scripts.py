@@ -1,0 +1,329 @@
+# -*- coding: utf-8 -*-
+"""
+HTML 报告交互脚本 (JavaScript)
+"""
+
+def get_base_scripts():
+    """获取基础交互脚本（打印、截图、隐私）"""
+    return """
+        function printReport() { window.print(); }
+        
+        function captureScreenshot() {
+            const btnGroup = document.querySelector('.btn-group');
+            btnGroup.style.display = 'none'; 
+            document.body.classList.add('no-anim'); // ⛔ 截图时冻结动画并强制显示所有元素
+            
+            html2canvas(document.body, {
+                backgroundColor: "#1e1e1e",
+                scale: 2, 
+                useCORS: true
+            }).then(canvas => {
+                let link = document.createElement('a');
+                link.download = document.title + '.png';
+                link.href = canvas.toDataURL();
+                link.click();
+                btnGroup.style.display = 'block'; 
+                document.body.classList.remove('no-anim'); // ✅ 恢复动画状态
+            });
+        }
+        
+        function togglePrivacy() {
+            const sensitiveElements = document.querySelectorAll('.sensitive-data');
+            const btn = document.getElementById('privacyBtn');
+            let isBlurred = false;
+            
+            sensitiveElements.forEach(el => {
+                if (el.classList.contains('blurred-text')) {
+                    el.classList.remove('blurred-text');
+                    isBlurred = false;
+                } else {
+                    el.classList.add('blurred-text');
+                    isBlurred = true;
+                }
+            });
+            
+            if (isBlurred) {
+                btn.innerText = '🔓 显示利润';
+            } else {
+                btn.innerText = '👁️ 隐藏利润';
+            }
+        }
+    """
+
+def get_particle_animation_js():
+    """获取粒子背景动画脚本"""
+    return """
+        (function initParticles() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.style.position = 'fixed';
+            canvas.style.top = '0';
+            canvas.style.left = '0';
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
+            canvas.style.zIndex = '-1';
+            canvas.style.pointerEvents = 'none';
+            document.body.prepend(canvas);
+
+            let particles = [];
+            const PARTICLE_COUNT = 80;
+
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            class Particle {
+                constructor() {
+                    this.reset();
+                }
+                reset() {
+                    this.x = Math.random() * canvas.width;
+                    this.y = Math.random() * canvas.height;
+                    this.vx = (Math.random() - 0.5) * 0.5;
+                    this.vy = (Math.random() - 0.5) * 0.5;
+                    this.radius = Math.random() * 2;
+                    this.alpha = Math.random() * 0.5 + 0.1;
+                    this.color = Math.random() > 0.5 ? '#00FF99' : '#00CCFF';
+                    this.twinkleSpeed = Math.random() * 0.03 + 0.01;
+                    this.twinklePhase = Math.random() * Math.PI * 2;
+                }
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
+                        this.reset();
+                    }
+                    this.twinklePhase += this.twinkleSpeed;
+                    this.alpha = 0.3 + Math.sin(this.twinklePhase) * 0.4;
+                }
+                draw() {
+                    ctx.save();
+                    ctx.globalAlpha = this.alpha;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.fill();
+                    ctx.restore();
+                }
+            }
+
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                particles.push(new Particle());
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => { p.update(); p.draw(); });
+                requestAnimationFrame(animate);
+            }
+            animate();
+        })();
+    """
+
+def get_counter_animation_js():
+    """获取抽奖式数字滚动动画脚本（老虎机效果）"""
+    return """
+        (function initSlotMachineAnimation() {
+            /**
+             * 抽奖机式数字滚动动画
+             * @param {Element} element - 要动画的文本元素
+             * @param {number} targetValue - 目标数值
+             * @param {string} suffix - 后缀（如 " 吨"、" 万"）
+             * @param {number} decimals - 小数位数
+             */
+            function animateSlotMachine(element, targetValue, suffix = '', decimals = 1) {
+                const totalDuration = 2500;  // 总动画时长
+                const spinPhase = 1500;      // 快速滚动阶段时长
+                const slowDownPhase = 1000;  // 减速阶段时长
+                const startTime = performance.now();
+                
+                // 计算随机数范围（目标值的 50% ~ 150%）
+                const minRandom = targetValue * 0.3;
+                const maxRandom = targetValue * 1.7;
+                
+                function formatNumber(num) {
+                    return num.toFixed(decimals);
+                }
+                
+                function getRandomValue() {
+                    return minRandom + Math.random() * (maxRandom - minRandom);
+                }
+                
+                function easeOutExpo(t) {
+                    return t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+                }
+                
+                function update(currentTime) {
+                    const elapsed = currentTime - startTime;
+                    
+                    if (elapsed < spinPhase) {
+                        // === 快速随机滚动阶段 ===
+                        // 滚动速度：开始快，逐渐变慢
+                        const spinProgress = elapsed / spinPhase;
+                        const intervalMs = 30 + spinProgress * 100; // 30ms -> 130ms
+                        
+                        // 每隔一定时间切换随机数
+                        const randomValue = getRandomValue();
+                        element.textContent = formatNumber(randomValue) + suffix;
+                        
+                        // 添加闪烁效果
+                        element.style.opacity = 0.7 + Math.random() * 0.3;
+                        
+                        requestAnimationFrame(update);
+                    } else if (elapsed < totalDuration) {
+                        // === 减速收敛阶段 ===
+                        const slowProgress = (elapsed - spinPhase) / slowDownPhase;
+                        const easedProgress = easeOutExpo(slowProgress);
+                        
+                        // 从最后一个随机值渐变到目标值
+                        const lastRandomBase = targetValue * (0.8 + Math.random() * 0.4);
+                        const currentValue = lastRandomBase + (targetValue - lastRandomBase) * easedProgress;
+                        
+                        element.textContent = formatNumber(currentValue) + suffix;
+                        element.style.opacity = 0.7 + easedProgress * 0.3;
+                        
+                        requestAnimationFrame(update);
+                    } else {
+                        // === 最终定格 ===
+                        element.textContent = formatNumber(targetValue) + suffix;
+                        element.style.opacity = '1';
+                        
+                        // 添加完成后的高亮闪烁效果
+                        element.style.transition = 'filter 0.3s';
+                        element.style.filter = 'brightness(1.5) drop-shadow(0 0 10px currentColor)';
+                        setTimeout(() => {
+                            element.style.filter = '';
+                        }, 500);
+                    }
+                }
+                
+                requestAnimationFrame(update);
+            }
+            
+            /**
+             * 查找并动画化仪表板中的 KPI 数字
+             */
+            function initDashboardKPIAnimation() {
+                // 等待 Plotly 渲染完成
+                setTimeout(() => {
+                    // 查找所有 Plotly Indicator 数字
+                    const allTexts = document.querySelectorAll('text');
+                    
+                    // KPI 标题关键词（用于定位附近的数值）
+                    const kpiTitles = ['总发货量', '总预估利润', '平均吨利润', '总运输车次', '日均发货量'];
+                    const titlePositions = [];
+                    
+                    // 第一步：收集标题位置
+                    allTexts.forEach(el => {
+                        const content = (el.textContent || '').trim();
+                        if (kpiTitles.some(title => content.includes(title))) {
+                            const rect = el.getBoundingClientRect();
+                            titlePositions.push({
+                                title: content,
+                                x: rect.x + rect.width / 2,
+                                y: rect.y,
+                                element: el
+                            });
+                        }
+                    });
+                    
+                    // 第二步：查找每个标题下方的数值并动画化
+                    const animatedElements = new Set();
+                    
+                    allTexts.forEach(el => {
+                        if (animatedElements.has(el)) return;
+                        
+                        const content = (el.textContent || '').trim();
+                        
+                        // 匹配数字+单位格式（如 "667.5 吨"、"5.05 万"）
+                        const numMatch = content.match(/^([\\d,\\.]+)\\s*(吨|万|元|车)$/);
+                        if (!numMatch) return;
+                        
+                        const rect = el.getBoundingClientRect();
+                        const elX = rect.x + rect.width / 2;
+                        const elY = rect.y;
+                        
+                        // 检查是否在某个 KPI 标题下方
+                        for (const pos of titlePositions) {
+                            if (Math.abs(elX - pos.x) < 120 && elY > pos.y && (elY - pos.y) < 100) {
+                                // 找到匹配的 KPI 数值！
+                                const numValue = parseFloat(numMatch[1].replace(/,/g, ''));
+                                const unit = ' ' + numMatch[2];
+                                
+                                // 确定小数位数
+                                let decimals = 1;
+                                if (numMatch[1].includes('.')) {
+                                    decimals = numMatch[1].split('.')[1].length;
+                                } else {
+                                    decimals = 0;
+                                }
+                                
+                                // 启动抽奖式动画（错开时间）
+                                const delay = titlePositions.indexOf(pos) * 300;
+                                setTimeout(() => {
+                                    animateSlotMachine(el, numValue, unit, decimals);
+                                }, delay);
+                                
+                                animatedElements.add(el);
+                                break;
+                            }
+                        }
+                    });
+                    
+                    console.log('🎰 抽奖式 KPI 动画已启动，共 ' + animatedElements.size + ' 个元素');
+                    
+                }, 800); // 等待 Plotly 渲染
+            }
+            
+            // 页面加载完成后启动
+            window.addEventListener('load', initDashboardKPIAnimation);
+        })();
+    """
+
+
+def get_stagger_animation_js():
+    """获取级联渐入动画及霓虹脉冲脚本"""
+    return """
+        (function initStaggeredAnimation() {
+            window.addEventListener('load', () => {
+                setTimeout(() => {
+                    // Plotly图表级联动画
+                    const plotlyContainers = document.querySelectorAll('.plotly-graph-div');
+                    plotlyContainers.forEach((container, index) => {
+                        container.style.opacity = '0';
+                        container.style.transform = 'translateY(30px)';
+                        container.style.transition = 'all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1)';
+                        
+                        setTimeout(() => {
+                            container.style.opacity = '1';
+                            container.style.transform = 'translateY(0)';
+                            container.classList.add('neon-border'); // 添加霓虹边框
+                        }, index * 150);
+                    });
+                    
+                    // 霓虹文字效果
+                    setTimeout(() => {
+                        const textElements = document.querySelectorAll('text');
+                        const kpiColors = ['rgb(0, 255, 153)', 'rgb(255, 0, 204)', 'rgb(0, 204, 255)', 'rgb(255, 255, 51)'];
+                        
+                        textElements.forEach(el => {
+                            const fill = el.style.fill || el.getAttribute('fill');
+                            if (!fill) return;
+                            
+                            const isKPI = kpiColors.some(c => fill.includes(c)) || 
+                                          (el.getAttribute('class') && el.getAttribute('class').includes('number'));
+                            
+                            if (isKPI) {
+                                el.style.filter = 'drop-shadow(0 0 5px ' + fill + ')';
+                                el.style.transition = 'filter 1s alternate infinite';
+                            }
+                        });
+                    }, 1000);
+                    
+                }, 300);
+            });
+        })();
+    """
