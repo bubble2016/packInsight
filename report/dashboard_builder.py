@@ -166,7 +166,7 @@ def build_dashboard_html(fig, title, dest_list=None):
             });
             
             // 更新按钮文字
-            btn.textContent = isProfitHidden ? '显示利润' : '隐藏利润';
+            btn.innerHTML = isProfitHidden ? '👁️ 显示利润' : '🙈 隐藏利润';
         }
         
         // 保存长图功能（带进度提示）
@@ -176,12 +176,11 @@ def build_dashboard_html(fig, title, dest_list=None):
             const originalText = saveBtn.innerHTML;
             
             // 显示进度
-            saveBtn.textContent = '保存中...';
+            saveBtn.innerHTML = '⏳ 保存中...';
             saveBtn.style.background = '#666';
             btnGroup.style.pointerEvents = 'none';
             
-            // 冻结动画
-            document.body.classList.add('snapshot-mode');
+            // 准备截图
             
             setTimeout(() => {
                 html2canvas(document.body, {
@@ -192,9 +191,11 @@ def build_dashboard_html(fig, title, dest_list=None):
                     onclone: function(clonedDoc) {
                         const clonedBtnGroup = clonedDoc.querySelector('.btn-group');
                         if (clonedBtnGroup) clonedBtnGroup.style.display = 'none';
+                        // 在克隆层添加截图模式类，不影响主界面
+                        clonedDoc.body.classList.add('snapshot-mode');
                     }
                 }).then(canvas => {
-                    saveBtn.textContent = '已保存✓';
+                    saveBtn.innerHTML = '✅ 已保存';
                     saveBtn.style.background = '#00FF99';
                     saveBtn.style.color = '#000';
                     
@@ -208,10 +209,10 @@ def build_dashboard_html(fig, title, dest_list=None):
                         saveBtn.style.background = '';
                         saveBtn.style.color = '';
                         btnGroup.style.pointerEvents = '';
-                        document.body.classList.remove('snapshot-mode');
+                        btnGroup.style.pointerEvents = '';
                     }, 1500);
                 }).catch(err => {
-                    saveBtn.textContent = '失败✗';
+                    saveBtn.innerHTML = '❌ 失败';
                     saveBtn.style.background = '#FF3333';
                     console.error('保存失败:', err);
                     
@@ -219,7 +220,7 @@ def build_dashboard_html(fig, title, dest_list=None):
                         saveBtn.innerHTML = originalText;
                         saveBtn.style.background = '';
                         btnGroup.style.pointerEvents = '';
-                        document.body.classList.remove('snapshot-mode');
+                        btnGroup.style.pointerEvents = '';
                     }, 2000);
                 });
             }, 100);
@@ -243,8 +244,8 @@ def build_dashboard_html(fig, title, dest_list=None):
     
     <!-- 侧边栏按钮 -->
     <div class="btn-group">
-        <button id="saveBtn" class="btn btn-shot" onclick="saveLongImage()">保存长图</button>
-        <button id="profitBtn" class="btn btn-privacy" onclick="toggleProfit()">隐藏利润</button>
+        <button id="saveBtn" class="btn btn-shot" onclick="saveLongImage()">📸 保存长图</button>
+        <button id="profitBtn" class="btn btn-privacy" onclick="toggleProfit()">🙈 隐藏利润</button>
     </div>
     
     <!-- 仪表板头部 (一行大字体标题) -->

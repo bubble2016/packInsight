@@ -39,11 +39,15 @@ def get_dashboard_base_styles():
             z-index: 1;
         }
         
-        /* Plotly 容器特效 */
+        /* Plotly 容器特效：添加隐形式 Glassmorphism 背景 */
         .plotly-graph-div {
             margin-top: 20px;
             animation: zoomInEntry 1s ease-out;
             filter: drop-shadow(0 0 20px rgba(0,0,0,0.5));
+            background: rgba(255, 255, 255, 0.05) !important; /* 5% 透明度的隐形背景块 */
+            border-radius: 12px;
+            backdrop-filter: blur(2px);
+            border: 1px solid rgba(255, 255, 255, 0.08); /* 极细微的边框 */
         }
         @keyframes zoomInEntry { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
 

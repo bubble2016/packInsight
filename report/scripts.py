@@ -10,20 +10,38 @@ def get_base_scripts():
         
         function captureScreenshot() {
             const btnGroup = document.querySelector('.btn-group');
-            btnGroup.style.display = 'none'; 
-            document.body.classList.add('no-anim'); // ⛔ 截图时冻结动画并强制显示所有元素
+            const saveBtn = document.querySelector('.btn-shot');
+            const originalText = saveBtn.innerHTML;
+            
+            // 优化体验：仅修改按钮状态，不隐藏界面防止闪烁
+            saveBtn.innerHTML = '⏳ 保存中...';
+            saveBtn.style.cursor = 'wait';
             
             html2canvas(document.body, {
                 backgroundColor: "#1e1e1e",
                 scale: 2, 
-                useCORS: true
+                useCORS: true,
+                onclone: function(clonedDoc) {
+                    // 在克隆的文档中隐藏按钮，这样真实屏幕不会闪烁
+                    const clonedBtnGroup = clonedDoc.querySelector('.btn-group');
+                    if(clonedBtnGroup) clonedBtnGroup.style.display = 'none'; 
+                    // 在克隆文档中冻结动画
+                    clonedDoc.body.classList.add('no-anim');
+                }
             }).then(canvas => {
                 let link = document.createElement('a');
                 link.download = document.title + '.png';
                 link.href = canvas.toDataURL();
                 link.click();
-                btnGroup.style.display = 'block'; 
-                document.body.classList.remove('no-anim'); // ✅ 恢复动画状态
+                
+                // 恢复按钮与状态
+                saveBtn.innerHTML = '✅ 已保存';
+                saveBtn.style.cursor = 'default';
+                setTimeout(() => { saveBtn.innerHTML = originalText; }, 2000);
+            }).catch(err => {
+                console.error(err);
+                saveBtn.innerHTML = '❌ 失败';
+                setTimeout(() => { saveBtn.innerHTML = originalText; }, 2000);
             });
         }
         
@@ -261,6 +279,12 @@ def get_counter_animation_js():
                                     decimals = 0;
                                 }
                                 
+                                // 立即隐藏真实值，显示初始随机状态
+                                const initialRandom = numValue * 0.5 + Math.random() * numValue;
+                                // 立即设置初始文本，避免露馅
+                                el.textContent = initialRandom.toFixed(decimals) + unit;
+                                el.style.opacity = '0.5';
+
                                 // 启动抽奖式动画（错开时间）
                                 const delay = titlePositions.indexOf(pos) * 300;
                                 setTimeout(() => {
@@ -300,7 +324,7 @@ def get_stagger_animation_js():
                         setTimeout(() => {
                             container.style.opacity = '1';
                             container.style.transform = 'translateY(0)';
-                            container.classList.add('neon-border'); // 添加霓虹边框
+                            // container.classList.add('neon-border'); // 已移除霓虹边框
                         }, index * 150);
                     });
                     
