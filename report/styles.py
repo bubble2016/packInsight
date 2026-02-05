@@ -161,6 +161,12 @@ def get_table_styles():
         
         .sensitive-data { transition: filter 0.5s ease; }
         .blurred-text { filter: blur(12px); pointer-events: none; }
+        
+        /* 数据条样式 */
+        .bar-container { display: flex; align-items: center; gap: 8px; }
+        .bar-bg { flex-grow: 1; height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; min-width: 60px; }
+        .data-bar { height: 100%; border-radius: 3px; animation: expandWidth 1s ease-out forwards; width: 0; }
+        @keyframes expandWidth { from { width: 0; } to { width: var(--width); } }
     """
 
 def get_animation_styles():

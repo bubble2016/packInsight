@@ -12,7 +12,7 @@ def create_summary_table(df):
         df: 清洗后的 DataFrame
     
     Returns:
-        tuple: (category_summary, destination_summary, weekly_summary)
+        tuple: (category_summary, destination_summary, weekly_summary, daily_summary)
     """
     # 品类汇总
     category_summary = df.groupby('类别').agg({
@@ -54,4 +54,12 @@ def create_summary_table(df):
     }).fillna(0).round(2)
     weekly_summary.columns = ['总重量', '平均重量', '总利润', '平均利润', '运输次数']
     
-    return category_summary, destination_summary, weekly_summary
+    # 日度汇总 (High/Low 分析用)
+    daily_summary = df.groupby('中文日期').agg({
+        '重量（吨）': 'sum',
+        '预估利润': 'sum',
+        '车牌号': 'count'
+    }).fillna(0).round(2)
+    daily_summary.columns = ['总重量', '总利润', '车次']
+    
+    return category_summary, destination_summary, weekly_summary, daily_summary

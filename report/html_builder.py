@@ -16,7 +16,8 @@ from .scripts import (
 
 def build_analysis_report(target_sheet, generate_time, kpi_data, 
                          category_summary, destination_summary, weekly_summary,
-                         top_vehicles, cost_analysis, kpi_title_prefix):
+                         top_vehicles, cost_analysis, kpi_title_prefix, 
+                         daily_summary=None):
     """构建完整 HTML 分析报告"""
     
     # 提取成本分析数据
@@ -48,6 +49,9 @@ def build_analysis_report(target_sheet, generate_time, kpi_data,
     
     # 数据总览区域 (品类+目的地)
     overview_html = build_overview_section(category_summary, destination_summary)
+    
+    # 每日峰值分析 (新增)
+    daily_html = build_daily_section(daily_summary) if daily_summary is not None else ""
     
     # 深度洞察区域 (周度+车辆)
     insight_html = build_insight_section(weekly_summary, top_vehicles)
@@ -93,6 +97,8 @@ def build_analysis_report(target_sheet, generate_time, kpi_data,
         
         {kpi_html}
         {overview_html}
+        
+        {daily_html}
         
         <h2 class="section-title">🚀 深度洞察</h2>
         {insight_html}
@@ -145,15 +151,81 @@ def build_kpi_section(kpi_data):
     return kpi_html
 
 
+def build_daily_section(daily_summary):
+    """构建日度峰值分析区域"""
+    if daily_summary.empty:
+        return ""
+        
+    # 找到极值
+    max_day = daily_summary['总重量'].idxmax()
+    min_day = daily_summary['总重量'].idxmin()
+    max_val = daily_summary.loc[max_day, '总重量']
+    min_val = daily_summary.loc[min_day, '总重量']
+    
+    max_profit_day = daily_summary['总利润'].idxmax()
+    max_profit_val = daily_summary.loc[max_profit_day, '总利润']
+    
+    # 计算均值作为基准
+    avg_val = daily_summary['总重量'].mean()
+
+    return f'''
+    <h2 class="section-title" style="margin-top: 30px;">📅 每日峰值透视 (High/Low)</h2>
+    <div class="card">
+        <div style="display: flex; gap: 30px; justify-content: space-around;">
+             <div style="text-align: center; color: #ff5e62;">
+                <div style="font-size: 12px; color: #aaa; margin-bottom: 5px;">🔥 巅峰爆单日</div>
+                <div style="font-size: 20px; font-weight: bold; margin-bottom: 5px;">{max_day}</div>
+                <div style="font-size: 28px; color: #ff5e62; font-weight: 800;">{max_val:.1f} <span style="font-size:14px">吨</span></div>
+                <div style="font-size: 12px; color: #888; margin-top: 5px;">是平均水平的 {(max_val/avg_val):.1f} 倍</div>
+            </div>
+            
+             <div style="width: 1px; background: rgba(255,255,255,0.1);"></div>
+            
+             <div style="text-align: center; color: #00FF99;">
+                <div style="font-size: 12px; color: #aaa; margin-bottom: 5px;">💰 利润最高日</div>
+                <div style="font-size: 20px; font-weight: bold; margin-bottom: 5px;">{max_profit_day}</div>
+                <div class="sensitive-data" style="font-size: 28px; color: #00FF99; font-weight: 800;">{max_profit_val/10000:.2f} <span style="font-size:14px">万</span></div>
+                <div style="font-size: 12px; color: #888; margin-top: 5px;">单日利润之王</div>
+            </div>
+
+            <div style="width: 1px; background: rgba(255,255,255,0.1);"></div>
+
+            <div style="text-align: center; color: #00CCFF;">
+                <div style="font-size: 12px; color: #aaa; margin-bottom: 5px;">🧊 运营低谷日</div>
+                <div style="font-size: 20px; font-weight: bold; margin-bottom: 5px;">{min_day}</div>
+                <div style="font-size: 28px; color: #00CCFF; font-weight: 800;">{min_val:.1f} <span style="font-size:14px">吨</span></div>
+                <div style="font-size: 12px; color: #888; margin-top: 5px;">需关注原因</div>
+            </div>
+        </div>
+    </div>
+    '''
+
+
 def build_overview_section(category_summary, destination_summary):
     """构建数据总览区域 HTML"""
+    # 计算最大值用于进度条归一化
+    max_cat_weight = category_summary['总重量'].max() if not category_summary.empty else 1
+    max_dest_weight = destination_summary['总重量'].max() if not destination_summary.empty else 1
+    
     html = """<div class="grid-2">
             <div class="card">
                 <h3>🏷️ 品类综合表现</h3>
                 <table><tr><th>品类</th><th>总量(吨)</th><th>总利润(万)</th><th>吨利润</th></tr>"""
     
     for idx, row in category_summary.sort_values('总重量', ascending=False).head(8).iterrows():
-        html += f"<tr><td>{idx}</td><td>{row['总重量']:.1f}</td><td class='sensitive-data'>{(row['总利润']/10000):.3f}</td><td class='sensitive-data'>{row['吨利润']:.1f}</td></tr>"
+        weight = row['总重量']
+        bar_width = (weight / max_cat_weight) * 100
+        html += f"""<tr>
+            <td>{idx}</td>
+            <td>
+                <div class="bar-container">
+                    <span>{weight:.1f}</span>
+                    <div class="bar-bg"><div class="data-bar" style="width: {bar_width}%; --width: {bar_width}%; background: linear-gradient(90deg, #00C9FF, #92FE9D);"></div></div>
+                </div>
+            </td>
+            <td class='sensitive-data'>{(row['总利润']/10000):.3f}</td>
+            <td class='sensitive-data'>{row['吨利润']:.1f}</td>
+        </tr>"""
     html += "</table></div>"
     
     html += """<div class="card">
@@ -161,7 +233,19 @@ def build_overview_section(category_summary, destination_summary):
                 <table><tr><th>目的地</th><th>总量(吨)</th><th>车次</th><th>吨均运费</th></tr>"""
     
     for idx, row in destination_summary.sort_values('总重量', ascending=False).head(8).iterrows():
-        html += f"<tr><td class='sensitive-data'>{idx}</td><td>{row['总重量']:.1f}</td><td>{int(row['车次'])}</td><td>{row['吨均运费']:.1f}</td></tr>"
+        weight = row['总重量']
+        bar_width = (weight / max_dest_weight) * 100
+        html += f"""<tr>
+            <td class='sensitive-data'>{idx}</td>
+            <td>
+                <div class="bar-container">
+                    <span>{weight:.1f}</span>
+                    <div class="bar-bg"><div class="data-bar" style="width: {bar_width}%; --width: {bar_width}%; background: linear-gradient(90deg, #F9D423, #FF4E50);"></div></div>
+                </div>
+            </td>
+            <td>{int(row['车次'])}</td>
+            <td>{row['吨均运费']:.1f}</td>
+        </tr>"""
     html += "</table></div></div>"
     
     return html
@@ -169,13 +253,29 @@ def build_overview_section(category_summary, destination_summary):
 
 def build_insight_section(weekly_summary, top_vehicles):
     """构建深度洞察区域 HTML"""
+    # 计算最大值
+    max_week_weight = weekly_summary['总重量'].max() if not weekly_summary.empty else 1
+    max_vehicle_weight = top_vehicles['重量（吨）'].max() if not top_vehicles.empty else 1
+    
     html = """<div class="grid-2">
             <div class="card">
                 <h3>📅 周度趋势雷达</h3>
                 <table><tr><th>周次</th><th>总重量(吨)</th><th>总利润(元)</th><th>车次</th></tr>"""
     
     for idx, row in weekly_summary.iterrows():
-        html += f"<tr><td>{idx}</td><td>{row['总重量']:.1f}</td><td class='sensitive-data'>{row['总利润']:.0f}</td><td>{int(row['运输次数'])}</td></tr>"
+        weight = row['总重量']
+        bar_width = (weight / max_week_weight) * 100
+        html += f"""<tr>
+            <td>{idx}</td>
+            <td>
+                <div class="bar-container">
+                    <span>{weight:.1f}</span>
+                    <div class="bar-bg"><div class="data-bar" style="width: {bar_width}%; --width: {bar_width}%; background: linear-gradient(90deg, #A8CABA, #5D4157);"></div></div>
+                </div>
+            </td>
+            <td class='sensitive-data'>{row['总利润']:.0f}</td>
+            <td>{int(row['运输次数'])}</td>
+        </tr>"""
     html += "</table></div>"
     
     html += """<div class="card">
@@ -185,7 +285,20 @@ def build_insight_section(weekly_summary, top_vehicles):
     for idx, row in top_vehicles.iterrows():
         score = row['综合评分']
         badge = '<span class="badge badge-hot">金牌</span>' if score >= 90 else ''
-        html += f"<tr><td>{idx} {badge}</td><td>{row['重量（吨）']:.1f}</td><td>{int(row['运输次数'])}</td><td>{score:.1f}</td></tr>"
+        weight = row['重量（吨）']
+        bar_width = (weight / max_vehicle_weight) * 100
+        
+        html += f"""<tr>
+            <td>{idx} {badge}</td>
+            <td>
+                <div class="bar-container">
+                    <span>{weight:.1f}</span>
+                    <div class="bar-bg"><div class="data-bar" style="width: {bar_width}%; --width: {bar_width}%; background: linear-gradient(90deg, #ff9966, #ff5e62);"></div></div>
+                </div>
+            </td>
+            <td>{int(row['运输次数'])}</td>
+            <td>{score:.1f}</td>
+        </tr>"""
     html += "</table></div></div>"
     
     return html

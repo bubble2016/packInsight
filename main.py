@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-打包站智能分析系统 By 李小泡 v8.2 (模块化重构版)
+打包站智能分析系统 By 李小泡 v8.3 (模块化重构版)
 核心逻辑主入口
 """
 import os
@@ -217,7 +217,7 @@ def main():
 
     # --- 7. 多维度分析汇总表 ---
     app.update_progress(55, "正在构建多维数据模型...")
-    category_summary, destination_summary, weekly_summary = create_summary_table(df)
+    category_summary, destination_summary, weekly_summary, daily_summary = create_summary_table(df)
 
     # --- 多月份对比分析 ---
     app.update_progress(62, "正在进行多月份对比分析...")
@@ -270,7 +270,8 @@ def main():
     analysis_report = build_analysis_report(
         target_sheet, generate_time, kpi_data, 
         category_summary, destination_summary, weekly_summary,
-        top_vehicles, cost_analysis, kpi_title_prefix
+        top_vehicles, cost_analysis, kpi_title_prefix,
+        daily_summary
     )
 
     # --- 10. 获取桌面路径并保存文件 ---
