@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-打包站智能分析系统 By 李小泡 v8.1 (模块化重构版)
+打包站智能分析系统 By 李小泡 v8.2 (模块化重构版)
 核心逻辑主入口
 """
 import os
@@ -300,7 +300,7 @@ def main():
 
     # --- 生成独立的仪表板 HTML（含动画效果） ---
     dest_list = df['目的地'].unique().tolist() if '目的地' in df.columns else []
-    dashboard_html = build_dashboard_html(fig, kpi_title_prefix, dest_list)
+    dashboard_html = build_dashboard_html(fig, kpi_title_prefix, dest_list, generate_time)
     
     try:
         # 保存仪表板

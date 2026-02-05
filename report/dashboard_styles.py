@@ -76,7 +76,32 @@ def get_dashboard_base_styles():
         ::-webkit-scrollbar { width: 10px; background: #0f0c29; }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 5px; border: 1px solid #444; }
         ::-webkit-scrollbar-thumb:hover { background: #00FF99; }
-    """
+        
+        /* REAL-TIME CLOCK */
+        #real-time-clock {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 1.1em;
+            color: #00CCFF;
+            text-shadow: 0 0 10px rgba(0, 204, 255, 0.5);
+            margin-top: 10px;
+            letter-spacing: 2px;
+            opacity: 0.9;
+        }
+        
+        /* FOOTER */
+        .dashboard-footer {
+            text-align: center;
+            padding: 40px 0 60px 0;
+            color: rgba(255,255,255,0.3);
+            font-size: 0.85em;
+            letter-spacing: 1px;
+            text-shadow: 0 0 5px rgba(0,0,0,0.5);
+            margin-top: 50px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            background: linear-gradient(to top, rgba(0,0,0,0.5), transparent);
+        }
+        .footer-info { margin-bottom: 8px; }
+        .footer-tech { font-family: 'Consolas', monospace; color: rgba(0, 255, 153, 0.4); }"""
 
 
 def get_dashboard_button_styles():
@@ -85,25 +110,70 @@ def get_dashboard_button_styles():
         /* --- 侧边栏按钮组 (复用报告页风格) --- */
         .btn-group { 
             position: fixed; top: 50%; right: 0; transform: translateY(-50%); z-index: 10000;
-            display: flex; flex-direction: column; gap: 15px;
+            display: flex; flex-direction: column; gap: 20px;
         }
         .btn { 
-            padding: 15px 5px; border: none; border-radius: 12px 0 0 12px; 
-            cursor: pointer; font-weight: bold; margin: 0; 
-            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55); 
-            writing-mode: vertical-rl; text-orientation: upright; 
-            letter-spacing: 2px; font-size: 13px; color: #000;
-            display: flex; align-items: center; justify-content: center;
-            min-width: 35px; box-shadow: -4px 5px 15px rgba(0,0,0,0.5);
+            width: 36px;                   /* 缩小宽度 */
+            height: 100px;                 /* 缩小高度 */
+            border: none; 
+            border-radius: 10px 0 0 10px;
+            cursor: pointer; 
+            font-weight: bold; 
+            margin: 0; 
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); 
+            writing-mode: vertical-rl; 
+            text-orientation: upright; 
+            letter-spacing: 2px;           /* 减小字间距 */
+            font-size: 12px;               /* 减小字号 */
+            color: #fff; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            box-shadow: -3px 3px 10px rgba(0,0,0,0.3);
             font-family: "Microsoft YaHei", sans-serif;
+            text-shadow: 0 1px 1px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
         }
-        .btn:hover { transform: translateX(-5px); min-width: 45px; }
         
-        .btn-shot { background: rgba(0, 204, 255, 0.95); color: #000; box-shadow: 0 0 15px rgba(0, 204, 255, 0.4); }
-        .btn-shot:hover { box-shadow: -6px 6px 20px #00CCFF; }
+        /* 悬停效果：变宽 + 变亮 */
+        .btn:hover { 
+            width: 46px; 
+            padding-right: 3px;
+            filter: brightness(1.1);
+        }
         
-        .btn-privacy { background: rgba(255, 0, 204, 0.95); color: #fff; box-shadow: 0 0 15px rgba(255, 0, 204, 0.4); }
-        .btn-privacy:hover { box-shadow: -6px 6px 20px #FF00CC; }
+        /* 光泽效果 overlay */
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(90deg, rgba(255,255,255,0.1), transparent);
+            pointer-events: none;
+        }
+
+        /* 📸 保存按钮：深邃蓝青渐变 */
+        .btn-shot { 
+            background: linear-gradient(135deg, #00C6FF 0%, #0072FF 100%); 
+            box-shadow: 0 4px 15px rgba(0, 114, 255, 0.4); 
+        }
+        .btn-shot:hover { box-shadow: -6px 6px 20px rgba(0, 198, 255, 0.6); }
+        
+        /* 🙈 隐私按钮：紫罗兰洋红渐变 */
+        .btn-privacy { 
+            background: linear-gradient(135deg, #FF00CC 0%, #333399 100%); 
+            box-shadow: 0 4px 15px rgba(255, 0, 204, 0.4); 
+        }
+        .btn-privacy:hover { box-shadow: -6px 6px 20px rgba(255, 0, 204, 0.6); }
+
+        /* ⬆️ 顶部按钮：柠檬黄橙色渐变 */
+        .btn-top { 
+            background: linear-gradient(135deg, #FFE000 0%, #799F0C 100%); 
+            color: #000; /* 黄色背景配黑色文字 */
+            text-shadow: none;
+            box-shadow: 0 4px 15px rgba(255, 224, 0, 0.4); 
+        }
+        .btn-top:hover { box-shadow: -6px 6px 20px rgba(255, 224, 0, 0.6); }
         
         .blurred-sensitive { filter: blur(15px) !important; transition: filter 0.5s ease; }
         text { transition: filter 0.5s ease; }
@@ -239,6 +309,14 @@ def get_dashboard_animation_styles():
             margin-bottom: 20px;
             box-shadow: 0 0 15px #00FF99;
         }
+        .loading-text {
+            color: #00FF99;
+            font-family: 'Consolas', monospace;
+            font-size: 1.2em;
+            letter-spacing: 3px;
+            animation: textBlink 1.5s infinite alternate;
+        }
+        @keyframes textBlink { 0% { opacity: 0.5; } 100% { opacity: 1; text-shadow: 0 0 10px #00FF99; } }
         @keyframes spin { 100% { transform: rotate(360deg); } }
         
         /* 截图专用清理模式：去除所有导致模糊的滤镜和动画 */

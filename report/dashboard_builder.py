@@ -55,7 +55,7 @@ def get_dashboard_extra_styles():
     """
 
 
-def build_dashboard_html(fig, title, dest_list=None):
+def build_dashboard_html(fig, title, dest_list=None, generate_time=None):
     """
     构建完整的仪表板 HTML
     
@@ -63,10 +63,12 @@ def build_dashboard_html(fig, title, dest_list=None):
         fig: Plotly Figure 对象
         title: 仪表板标题（如 "[1月]" 或 "[多月对比]"）
         dest_list: 目的地列表（用于隐私保护功能）
+        generate_time: 生成时间字符串
     
     Returns:
         str: 完整的 HTML 字符串
     """
+
     # 生成 Plotly 图表 HTML（不含完整页面结构，隐藏工具栏）
     plot_html = pio.to_html(
         fig,
@@ -240,17 +242,25 @@ def build_dashboard_html(fig, title, dest_list=None):
     </style>
 </head>
 <body>
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="active">
+        <div class="spinner"></div>
+        <div class="loading-text">系统装载中...</div>
+    </div>
+
     <!-- 粒子背景 Canvas (由 JS 动态创建) -->
     
     <!-- 侧边栏按钮 -->
     <div class="btn-group">
         <button id="saveBtn" class="btn btn-shot" onclick="saveLongImage()">📸 保存长图</button>
         <button id="profitBtn" class="btn btn-privacy" onclick="toggleProfit()">🙈 隐藏利润</button>
+        <button id="topBtn" class="btn btn-top" onclick="scrollToTop()">⬆️ 回到顶部</button>
     </div>
     
     <!-- 仪表板头部 (一行大字体标题) -->
     <div id="dashboard-header">
         <h1 class="cyber-title">西关打包站 {title} 实时运营仪表板</h1>
+        <div id="real-time-clock">--:--:--</div>
     </div>
     
     <!-- Plotly 图表区域 -->
@@ -258,6 +268,12 @@ def build_dashboard_html(fig, title, dest_list=None):
         {plot_html}
     </div>
     
+    <!-- 页脚 -->
+    <div class="dashboard-footer">
+        <div class="footer-info">系统生成: <b>PackInsight 智能分析系统</b> v8.1 | 数据更新: <span class="footer-tech">{generate_time}</span></div>
+        <div class="footer-tech">核心驱动: PANDAS & PLOTLY | 专为西关打包站定制开发</div>
+    </div>
+
     <script>
         {scripts}
         {hide_profit_script}

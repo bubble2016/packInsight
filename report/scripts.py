@@ -8,6 +8,11 @@ def get_base_scripts():
     return """
         function printReport() { window.print(); }
         
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        
         function captureScreenshot() {
             const btnGroup = document.querySelector('.btn-group');
             const saveBtn = document.querySelector('.btn-shot');
@@ -66,6 +71,22 @@ def get_base_scripts():
                 btn.innerText = '👁️ 隐藏利润';
             }
         }
+
+        // 实时时钟
+        function startClock() {
+            function update() {
+                const now = new Date();
+                const datePart = now.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\\//g, '-');
+                const timePart = now.toLocaleTimeString('zh-CN', { hour12: false });
+                const clockEl = document.getElementById('real-time-clock');
+                if (clockEl) {
+                    clockEl.innerHTML = `📅 ${datePart} <span style="margin-left:15px">⏰ ${timePart}</span>`;
+                }
+            }
+            setInterval(update, 1000);
+            update();
+        }
+        window.addEventListener('load', startClock);
     """
 
 def get_particle_animation_js():
@@ -313,6 +334,15 @@ def get_stagger_animation_js():
     return """
         (function initStaggeredAnimation() {
             window.addEventListener('load', () => {
+                // Remove Loading Screen
+                const loader = document.getElementById('loading-overlay');
+                if (loader) {
+                    setTimeout(() => {
+                        loader.style.opacity = '0';
+                        setTimeout(() => { loader.style.display = 'none'; }, 500);
+                    }, 600);
+                }
+
                 setTimeout(() => {
                     // Plotly图表级联动画
                     const plotlyContainers = document.querySelectorAll('.plotly-graph-div');
