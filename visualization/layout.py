@@ -53,6 +53,7 @@ def update_figure_layout(fig, week_stats_max):
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(0,0,0,0)',
         template=TEMPLATE_STYLE,
+        font=dict(family="Microsoft YaHei, Roboto, sans-serif"),
         height=2300,
         showlegend=True,
         legend=dict(

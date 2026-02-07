@@ -12,7 +12,7 @@ def get_dashboard_base_styles():
         body {
             background: radial-gradient(circle at center, #1e1e2f 0%, #0f0f1a 100%) !important;
             color: #e0e0e0 !important;
-            font-family: 'MSGothic', 'Microsoft YaHei', sans-serif;
+            font-family: 'MSGothic', 'Roboto', 'Microsoft YaHei', sans-serif;
             margin: 0; overflow-x: hidden;
         }
         
@@ -40,28 +40,30 @@ def get_dashboard_base_styles():
         }
         
         /* Plotly 容器特效：添加隐形式 Glassmorphism 背景 */
+        /* Plotly 容器特效：性能优化版 (移除实时模糊) */
         .plotly-graph-div {
             margin-top: 20px;
             animation: zoomInEntry 1s ease-out;
-            filter: drop-shadow(0 0 20px rgba(0,0,0,0.5));
-            background: rgba(255, 255, 255, 0.05) !important; /* 5% 透明度的隐形背景块 */
+            /* export-ignore: 移除昂贵的 drop-shadow 滤镜，改用 box-shadow */
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4); 
+            background: rgba(30, 32, 40, 0.7) !important; /* 提高不透明度代替模糊 */
             border-radius: 12px;
-            backdrop-filter: blur(2px);
-            border: 1px solid rgba(255, 255, 255, 0.08); /* 极细微的边框 */
+            /* backdrop-filter: blur(2px); <--- 移除此行以解决滚动卡顿 */
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
         @keyframes zoomInEntry { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
 
         /* 注入的 Header 样式 */
         #dashboard-header {
             text-align: center; padding: 25px;
-            background: rgba(30, 30, 35, 0.8);
-            backdrop-filter: blur(10px);
+            background: rgba(20, 20, 25, 0.95); /* 几乎不透明，提升性能 */
+            /* backdrop-filter: blur(10px); <--- 移除此行 */
             border-bottom: 1px solid rgba(0, 255, 204, 0.3);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
             position: relative; overflow: hidden;
         }
         #dashboard-header::after {
-            content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+            content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
             background: linear-gradient(90deg, transparent, #00FF99, #00CCFF, transparent);
             animation: scanline 3s linear infinite;
         }
@@ -100,8 +102,8 @@ def get_dashboard_base_styles():
             border-top: 1px solid rgba(255,255,255,0.05);
             background: linear-gradient(to top, rgba(0,0,0,0.5), transparent);
         }
-        .footer-info { margin-bottom: 8px; }
-        .footer-tech { font-family: 'Consolas', monospace; color: rgba(0, 255, 153, 0.4); }"""
+        .footer-info { margin-bottom: 8px; font-family: 'MSGothic', 'Roboto', 'Microsoft YaHei', sans-serif; letter-spacing: 1px; }
+        .footer-tech { font-family: 'MSGothic', 'Roboto', 'Microsoft YaHei', sans-serif; color: rgba(0, 255, 153, 0.6); font-weight: bold; letter-spacing: 1px; }"""
 
 
 def get_dashboard_button_styles():
@@ -176,6 +178,7 @@ def get_dashboard_button_styles():
         .btn-top:hover { box-shadow: -6px 6px 20px rgba(255, 224, 0, 0.6); }
         
         .blurred-sensitive { filter: blur(15px) !important; transition: filter 0.5s ease; }
+        .privacy-active .sensitive-data, .privacy-active .blurred-sensitive { filter: blur(15px) !important; pointer-events: none; user-select: none; }
         text { transition: filter 0.5s ease; }
     """
 

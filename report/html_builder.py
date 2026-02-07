@@ -134,7 +134,8 @@ def build_kpi_section(kpi_data):
     kpi_html = '<div class="kpi-container">'
     for kpi in kpi_data:
         title = kpi['title']
-        value_fmt = f"{kpi['value']:.1f}" if isinstance(kpi['value'], float) else f"{kpi['value']}"
+        fmt = kpi.get('valueformat', '.1f')
+        value_fmt = f"{kpi['value']:{fmt}}" if isinstance(kpi['value'], float) else f"{kpi['value']}"
         suffix = kpi['suffix']
         color = kpi['color']
         
@@ -205,7 +206,10 @@ def build_overview_section(category_summary, destination_summary):
     """构建数据总览区域 HTML"""
     # 计算最大值用于进度条归一化
     max_cat_weight = category_summary['总重量'].max() if not category_summary.empty else 1
+    max_cat_profit = category_summary['总利润'].max() if not category_summary.empty else 1
+    
     max_dest_weight = destination_summary['总重量'].max() if not destination_summary.empty else 1
+    max_dest_count = destination_summary['车次'].max() if not destination_summary.empty else 1
     
     html = """<div class="grid-2">
             <div class="card">
@@ -214,16 +218,26 @@ def build_overview_section(category_summary, destination_summary):
     
     for idx, row in category_summary.sort_values('总重量', ascending=False).head(8).iterrows():
         weight = row['总重量']
-        bar_width = (weight / max_cat_weight) * 100
+        profit = row['总利润']
+        
+        weight_width = (weight / max_cat_weight) * 100
+        profit_width = (profit / max_cat_profit) * 100
+        if profit_width < 0: profit_width = 0 # Handle negative profit
+        
         html += f"""<tr>
             <td>{idx}</td>
             <td>
                 <div class="bar-container">
                     <span>{weight:.1f}</span>
-                    <div class="bar-bg"><div class="data-bar" style="width: {bar_width}%; --width: {bar_width}%; background: linear-gradient(90deg, #00C9FF, #92FE9D);"></div></div>
+                    <div class="bar-bg"><div class="data-bar" style="width: {weight_width}%; --width: {weight_width}%; background: linear-gradient(90deg, #00C9FF, #92FE9D);"></div></div>
                 </div>
             </td>
-            <td class='sensitive-data'>{(row['总利润']/10000):.3f}</td>
+            <td class='sensitive-data'>
+                <div class="bar-container">
+                    <span>{(profit/10000):.3f}</span>
+                    <div class="bar-bg" style="min-width: 40px;"><div class="data-bar" style="width: {profit_width}%; --width: {profit_width}%; background: linear-gradient(90deg, #ff9a9e, #fecfef);"></div></div>
+                </div>
+            </td>
             <td class='sensitive-data'>{row['吨利润']:.1f}</td>
         </tr>"""
     html += "</table></div>"
@@ -234,16 +248,25 @@ def build_overview_section(category_summary, destination_summary):
     
     for idx, row in destination_summary.sort_values('总重量', ascending=False).head(8).iterrows():
         weight = row['总重量']
-        bar_width = (weight / max_dest_weight) * 100
+        count = row['车次']
+        
+        weight_width = (weight / max_dest_weight) * 100
+        count_width = (count / max_dest_count) * 100
+        
         html += f"""<tr>
             <td class='sensitive-data'>{idx}</td>
             <td>
                 <div class="bar-container">
                     <span>{weight:.1f}</span>
-                    <div class="bar-bg"><div class="data-bar" style="width: {bar_width}%; --width: {bar_width}%; background: linear-gradient(90deg, #F9D423, #FF4E50);"></div></div>
+                    <div class="bar-bg"><div class="data-bar" style="width: {weight_width}%; --width: {weight_width}%; background: linear-gradient(90deg, #F9D423, #FF4E50);"></div></div>
                 </div>
             </td>
-            <td>{int(row['车次'])}</td>
+            <td>
+                <div class="bar-container">
+                    <span>{int(count)}</span>
+                    <div class="bar-bg" style="min-width: 30px;"><div class="data-bar" style="width: {count_width}%; --width: {count_width}%; background: linear-gradient(90deg, #89f7fe, #66a6ff);"></div></div>
+                </div>
+            </td>
             <td>{row['吨均运费']:.1f}</td>
         </tr>"""
     html += "</table></div></div>"
@@ -391,7 +414,7 @@ def build_suggestions_section(loss_routes, low_profit_routes, cost_analysis=None
     html = f"""
         <div class="card" style="margin-top: 30px; background: linear-gradient(to right, #2d2d2d, #3d3d3d);">
             <h3 style="color:#FF00CC">💡 智能运营建议</h3>
-            <ul style="line-height: 2.0; color: #ddd;">
+            <ul style="line-height: 2.2; color: #ddd; list-style-type: none; padding: 0 20px;">
     """
     
     suggestions = []

@@ -97,80 +97,9 @@ def build_dashboard_html(fig, title, dest_list=None, generate_time=None):
         {get_stagger_animation_js()}
     """
     
-    # 隐藏利润功能脚本 (只隐藏利润相关数字) + 保存长图功能
+    # 隐藏利润功能脚本 (使用 scripts.py 中的统一逻辑) + 保存长图功能
+    # 注意：这里只保留保存长图的特定逻辑，隐私切换已统一
     hide_profit_script = """
-        // 隐藏利润功能：只隐藏利润相关的KPI数值
-        let isProfitHidden = false;
-        
-        // 存储利润数据的标识（通过附近标题判断）
-        function findProfitIndicators() {
-            const allTexts = document.querySelectorAll('text, tspan');
-            const profitElements = [];
-            
-            // 利润相关的标题关键词
-            const profitTitleKeywords = ['总预估利润', '平均吨利润', '每吨利润'];
-            
-            // 先找到利润标题的位置
-            const titlePositions = [];
-            allTexts.forEach(el => {
-                const content = (el.textContent || '').trim();
-                if (profitTitleKeywords.some(kw => content.includes(kw))) {
-                    // 获取标题元素的位置
-                    const rect = el.getBoundingClientRect();
-                    titlePositions.push({
-                        title: content,
-                        x: rect.x + rect.width / 2,
-                        y: rect.y,
-                        element: el
-                    });
-                }
-            });
-            
-            // 找到标题下方最近的数值元素
-            allTexts.forEach(el => {
-                const content = (el.textContent || '').trim();
-                
-                // 检查是否是数字+单位（万或元），或者是趋势指标（▲▼）
-                const isProfitValue = /^[0-9,\\.]+\\s*(万|元)$/.test(content);
-                const isTrendDelta = /^[▲▼△▽][0-9\\.]+$/.test(content);
-                
-                if (isProfitValue || isTrendDelta) {
-                    const rect = el.getBoundingClientRect();
-                    const elX = rect.x + rect.width / 2;
-                    const elY = rect.y;
-                    
-                    // 判断这个数值是否在某个利润标题的下方（垂直距离在150px内，水平距离在100px内）
-                    for (const pos of titlePositions) {
-                        if (Math.abs(elX - pos.x) < 100 && elY > pos.y && (elY - pos.y) < 150) {
-                            profitElements.push(el);
-                            break;
-                        }
-                    }
-                }
-            });
-            
-            return profitElements;
-        }
-        
-        function toggleProfit() {
-            const btn = document.getElementById('profitBtn');
-            isProfitHidden = !isProfitHidden;
-            
-            // 找到利润相关的元素
-            const profitElements = findProfitIndicators();
-            
-            profitElements.forEach(el => {
-                if (isProfitHidden) {
-                    el.classList.add('blurred-sensitive');
-                } else {
-                    el.classList.remove('blurred-sensitive');
-                }
-            });
-            
-            // 更新按钮文字
-            btn.innerHTML = isProfitHidden ? '👁️ 显示利润' : '🙈 隐藏利润';
-        }
-        
         // 保存长图功能（带进度提示）
         function saveLongImage() {
             const btnGroup = document.querySelector('.btn-group');
@@ -178,7 +107,7 @@ def build_dashboard_html(fig, title, dest_list=None, generate_time=None):
             const originalText = saveBtn.innerHTML;
             
             // 显示进度
-            saveBtn.innerHTML = '⏳ 保存中...';
+            saveBtn.innerHTML = '⏳...';
             saveBtn.style.background = '#666';
             btnGroup.style.pointerEvents = 'none';
             
@@ -251,9 +180,9 @@ def build_dashboard_html(fig, title, dest_list=None, generate_time=None):
     <!-- 粒子背景 Canvas (由 JS 动态创建) -->
     
     <!-- 侧边栏按钮 -->
-    <div class="btn-group">
+    <div class="btn-group" data-html2canvas-ignore="true">
         <button id="saveBtn" class="btn btn-shot" onclick="saveLongImage()">📸 保存长图</button>
-        <button id="profitBtn" class="btn btn-privacy" onclick="toggleProfit()">🙈 隐藏利润</button>
+        <button id="profitBtn" class="btn btn-privacy" onclick="togglePrivacy()">🙈 隐藏利润</button>
         <button id="topBtn" class="btn btn-top" onclick="scrollToTop()">⬆️ 回到顶部</button>
     </div>
     

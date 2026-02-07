@@ -100,7 +100,45 @@ class ErrorLogger:
 def print_log(message, tag="INFO"):
     """带时间戳的炫酷日志输出"""
     current_time = datetime.now().strftime("%H:%M:%S")
-    print(f"\033[1;36m[{current_time}]\033[0m \033[1;33m[{tag:<5}]\033[0m {message}")
+    
+    # 颜色定义
+    colors = {
+        'red': '\033[91m',
+        'green': '\033[92m',
+        'yellow': '\033[93m',
+        'blue': '\033[94m',
+        'magenta': '\033[95m',
+        'cyan': '\033[96m',
+        'white': '\033[97m',
+        'reset': '\033[0m'
+    }
+    
+    # 根据 Tag 选择颜色
+    tag_color = colors['cyan']
+    msg_color = colors['white']
+    icon = "🔹"
+    
+    if tag in ["ERROR", "STOP", "FAIL"]:
+        tag_color = colors['red']
+        icon = "❌"
+    elif tag in ["WARN", "WAIT"]:
+        tag_color = colors['yellow']
+        icon = "⚠️ "
+    elif tag in ["SUCCESS", "OK", "DONE"]:
+        tag_color = colors['green']
+        msg_color = colors['green']
+        icon = "✅"
+    elif tag in ["BOOT", "LOAD", "ASYNC"]:
+        tag_color = colors['magenta']
+        icon = "🚀"
+    elif tag in ["SAVE", "FILE", "DIR"]:
+        tag_color = colors['blue']
+        icon = "💾"
+    elif tag in ["DATA", "COMPARE"]:
+        tag_color = colors['yellow']
+        icon = "📊"
+        
+    print(f"\033[1;30m[{current_time}]\033[0m {tag_color}[{tag:<5}]\033[0m {icon} {msg_color}{message}{colors['reset']}")
 
 
 # 初始化全局错误日志管理器

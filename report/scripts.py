@@ -50,26 +50,98 @@ def get_base_scripts():
             });
         }
         
+        // 统一的隐私模式切换函数
         function togglePrivacy() {
-            const sensitiveElements = document.querySelectorAll('.sensitive-data');
-            const btn = document.getElementById('privacyBtn');
-            let isBlurred = false;
+            const body = document.body;
+            const btn = document.getElementById('privacyBtn') || document.getElementById('profitBtn');
             
-            sensitiveElements.forEach(el => {
-                if (el.classList.contains('blurred-text')) {
-                    el.classList.remove('blurred-text');
-                    isBlurred = false;
+            // 切换 Body 类（这将自动触发 CSS 模糊效果）
+            body.classList.toggle('privacy-active');
+            const isHidden = body.classList.contains('privacy-active');
+            
+            // 更新按钮文字
+            if (btn) {
+                if (isHidden) {
+                    btn.innerHTML = btn.id === 'profitBtn' ? '👁️ 显示利润' : '🔓 显示利润';
+                    btn.classList.add('active');
                 } else {
-                    el.classList.add('blurred-text');
-                    isBlurred = true;
+                    btn.innerHTML = btn.id === 'profitBtn' ? '🙈 隐藏利润' : '👁️ 隐藏利润';
+                    btn.classList.remove('active');
                 }
-            });
-            
-            if (isBlurred) {
-                btn.innerText = '🔓 显示利润';
-            } else {
-                btn.innerText = '👁️ 隐藏利润';
             }
+            
+            // --- 针对 Plotly 图表的特殊处理 (SVG/Canvas 无法被 simple CSS class 覆盖) ---
+            // 只有当存在 Plotly 图表时才执行
+            if (document.querySelector('.plotly-graph-div')) {
+                 handlePlotlyPrivacy(isHidden);
+            }
+        }
+        
+        // 专门处理 Plotly 图表的隐私保护
+        function handlePlotlyPrivacy(isHidden) {
+             // 1. 查找所有可能包含敏感数据的 SVG 文本元素
+             const allTexts = document.querySelectorAll('.plotly-graph-div text, .plotly-graph-div tspan');
+             
+             // 利润相关的关键词
+             const profitKeywords = ['总预估利润', '平均吨利润', '每吨利润', '利润率', '总利润'];
+             
+             // 收集标题位置
+             const titlePositions = [];
+             allTexts.forEach(el => {
+                 const content = (el.textContent || '').trim();
+                 if (profitKeywords.some(kw => content.includes(kw))) {
+                     const rect = el.getBoundingClientRect();
+                     titlePositions.push({
+                         x: rect.x + rect.width / 2,
+                         y: rect.y,
+                         width: rect.width,
+                         height: rect.height
+                     });
+                 }
+             });
+             
+             // 遍历所有文本以查找附近的数值
+             allTexts.forEach(el => {
+                 const content = (el.textContent || '').trim();
+                 
+                 // 简单的启发式：如果是数字且带有金额单位，或者纯数字（并在标题附近）
+                 // 匹配格式：xx.x 万, xx.x 元, xx%, 纯数字
+                 // 使用 raw string 避免 python 转义警告
+                 const isMoneyLike = /^[0-9,\\.]+\s*(万|元)$/.test(content);
+                 const isPercent = /^[0-9,\\.]+%$/.test(content);
+                 const isNumber = /^[0-9,\\.]+$/.test(content);
+                 
+                 if (isMoneyLike || isPercent || isNumber) {
+                     const rect = el.getBoundingClientRect();
+                     const elX = rect.x + rect.width / 2;
+                     const elY = rect.y;
+                     
+                     // 检查是否在任意利润标题下方/附近
+                     let isSensitive = false;
+                     for (const pos of titlePositions) {
+                         // 垂直方向：标题下方 0~150px
+                         // 水平方向：中心对齐偏差 < 100px
+                         if (elY >= pos.y && (elY - pos.y) < 180 && Math.abs(elX - pos.x) < 120) {
+                             isSensitive = true;
+                             break;
+                         }
+                         // 特殊情况：左右布局（如气泡图 Legend）
+                         if (Math.abs(elY - pos.y) < 50 && Math.abs(elX - pos.x) < 200) {
+                            // 可能是旁边的数值
+                         }
+                     }
+                     
+                     if (isSensitive) {
+                         if (isHidden) {
+                             el.classList.add('blurred-sensitive');
+                             el.style.filter = 'blur(10px)'; // 强制内联样式以确保生效
+                         } else {
+                             el.classList.remove('blurred-sensitive');
+                             el.style.filter = '';
+                         }
+                     }
+                 }
+             });
         }
 
         // 实时时钟

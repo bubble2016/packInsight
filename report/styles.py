@@ -6,8 +6,13 @@ HTML 报告样式定义 (CSS)
 def get_base_styles():
     """获取基础页面样式"""
     return """
-        body { font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif; margin: 40px; background:radial-gradient(circle at top left, #1a1a2e, #16213e); color: #e0e0e0; line-height: 1.6; min-height: 100vh; }
+        body { font-family: 'Segoe UI', 'Roboto', 'Microsoft YaHei', sans-serif; margin: 40px; background:radial-gradient(circle at top left, #1a1a2e, #16213e); color: #e0e0e0; line-height: 1.6; min-height: 100vh; }
         .container { max-width: 1400px; margin: 0 auto; animation: fadeIn 1s ease-out; }
+        
+        /* --- 滚动条完美样式 (与仪表板统一) --- */
+        ::-webkit-scrollbar { width: 10px; background: #0f0c29; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 5px; border: 1px solid #444; }
+        ::-webkit-scrollbar-thumb:hover { background: #00FF99; }
         
         /* --- 赛博朋克头部 --- */
         .header { 
@@ -160,6 +165,7 @@ def get_table_styles():
         .badge-warn { background: linear-gradient(45deg, #ffa502, #ffc048); color: black; }
         
         .sensitive-data { transition: filter 0.5s ease; }
+        .privacy-active .sensitive-data { filter: blur(12px) !important; pointer-events: none; user-select: none; }
         .blurred-text { filter: blur(12px); pointer-events: none; }
         
         /* 数据条样式 */

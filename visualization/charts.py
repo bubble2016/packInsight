@@ -100,13 +100,39 @@ def add_sankey_diagram(fig, df):
         
         current_colors = (NEON_COLORS * (len(labels) // len(NEON_COLORS) + 1))[:len(labels)]
         
+        # 动态计算 Link 颜色（让流向线条颜色跟随源节点颜色，增加透明度）
+        # 1. 建立节点索引到颜色的映射
+        node_colors = current_colors
+        
+        # 2. 为每个数据流生成对应的颜色
+        # source 是类别索引，直接对应 current_colors 的前 len(cats) 个颜色
+        cat_indices = sankey_data['类别'].map(label_map).tolist()
+        link_colors = []
+        
+        for src_idx in cat_indices:
+            # 获取源节点的十六进制颜色
+            hex_color = node_colors[src_idx % len(node_colors)]
+            
+            # 简单的 HEX 转 RGBA 转换
+            if hex_color.startswith('#'):
+                hex_color = hex_color.lstrip('#')
+                if len(hex_color) == 6:
+                    r = int(hex_color[0:2], 16)
+                    g = int(hex_color[2:4], 16)
+                    b = int(hex_color[4:6], 16)
+                    link_colors.append(f'rgba({r}, {g}, {b}, 0.4)')
+                else:
+                    link_colors.append('rgba(200, 200, 200, 0.4)') # Fallback
+            else:
+                link_colors.append('rgba(0, 204, 255, 0.4)') # Fallback if not hex
+
         fig.add_trace(go.Sankey(
             node=dict(pad=15, thickness=20, line=dict(color="black", width=0.5), 
                      label=labels, color=current_colors),
             link=dict(source=sankey_data['类别'].map(label_map), 
                      target=sankey_data['发往地'].map(label_map), 
                      value=sankey_data['重量（吨）'],
-                     color='rgba(0, 204, 255, 0.4)') 
+                     color=link_colors) 
         ), row=2, col=1)
     except Exception as e:
         print_log(f"桑基图生成失败: {e}", "WARN")
@@ -201,7 +227,9 @@ def add_category_profit_chart(fig, df):
     fig.add_trace(go.Bar(
         y=profit_rank['类别'], x=profit_rank['mean'], orientation='h',
         error_x=dict(type='data', array=profit_rank['std'], visible=True),
-        marker=dict(color=profit_rank['mean'], colorscale='RdYlGn', line=dict(color='white', width=1)),
+        # 使用循环霓虹色，避免数值低时颜色过暗看不清
+        marker=dict(color=NEON_COLORS * (len(profit_rank) // len(NEON_COLORS) + 1), 
+                   line=dict(color='white', width=1)),
         name='每吨利润', text=profit_rank['mean'].round(1), textposition='outside',
         hovertemplate='类别: %{y}<br>平均利润: %{x:.2f}元/吨<extra></extra>'
     ), row=4, col=1)
@@ -217,7 +245,7 @@ def add_bubble_chart(fig, df):
             size=df['重量（吨）'], 
             sizemode='area', 
             sizeref=2.*max_weight_val/(40.**2),
-            color=df['利润率'], colorscale='Rainbow', showscale=True,
+            color=df['利润率'], colorscale='Portland', showscale=True,
             colorbar=dict(title="利润率%", x=1.02, y=0.5, len=0.4), line=dict(width=1, color='White')
         ),
         text=df['车牌号'] + "<br>" + df['中文日期'] + "<br>品类:" + df['类别'],
@@ -227,15 +255,49 @@ def add_bubble_chart(fig, df):
 
 
 def add_heatmap(fig, df):
-    """添加品类-目的地热力图"""
-    heatmap_data = df.pivot_table(values='重量（吨）', index='类别', columns='发往地', aggfunc='sum', fill_value=0).round(1)
-    if not heatmap_data.empty:
-        fig.add_trace(go.Heatmap(
-            z=heatmap_data.values, x=heatmap_data.columns, y=heatmap_data.index,
-            colorscale='Viridis', colorbar=dict(title="发货量(吨)", x=1.02, y=0.15, len=0.3),
-            text=heatmap_data.values, texttemplate='%{text}',
-            hovertemplate='品类: %{y}<br>目的地: %{x}<br>发货量: %{z}吨<extra></extra>'
-        ), row=5, col=1)
+    """添加品类-目的地矩阵图 (颜色与桑基图保持一致)"""
+    # 准备聚合数据
+    grouped = df.groupby(['类别', '发往地'])['重量（吨）'].sum().reset_index()
+    if grouped.empty: return
+
+    # 1. 获取品类颜色映射 (逻辑必须与桑基图完全一致，确保视觉统一)
+    cats = df['类别'].unique()
+    # 桑基图中使用的颜色循环逻辑
+    cat_color_map = {cat: NEON_COLORS[i % len(NEON_COLORS)] for i, cat in enumerate(cats)}
+    
+    # 2. 映射颜色
+    grouped['color'] = grouped['类别'].map(cat_color_map)
+    
+    # 3. 计算最大值用于归一化大小
+    max_val = grouped['重量（吨）'].max()
+    if max_val == 0: max_val = 1
+
+    # 4. 使用 Scatter 模拟 Heatmap (气泡矩阵)
+    # 这样可以实现：行颜色固定(品类色)，大小代表数值，彻底解决"黑色色块"和"颜色不一致"问题
+    fig.add_trace(go.Scatter(
+        x=grouped['发往地'],
+        y=grouped['类别'],
+        mode='markers+text',
+        marker=dict(
+            symbol='square', # 方块形状更像热力图
+            color=grouped['color'],
+            size=grouped['重量（吨）'],
+            sizemode='area',
+            # 调整缩放系数：目标是让最大值接近填满格子(约50px)
+            sizeref=2. * max_val / (55.**2), 
+            line=dict(width=1, color='rgba(255,255,255,0.8)'),
+            opacity=0.9
+        ),
+        text=grouped['重量（吨）'].round(1),
+        textposition='middle center',
+        # 增加文字阴影效果以适应不同亮度的背景色
+        textfont=dict(size=11, color='white', family="Roboto, Microsoft YaHei"),
+        hovertemplate='品类: %{y}<br>目的地: %{x}<br>发货量: %{text}吨<extra></extra>'
+    ), row=5, col=1)
+    
+    # 优化网格线，使其更像表格
+    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='rgba(255,255,255,0.05)', row=5, col=1)
+    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='rgba(255,255,255,0.05)', row=5, col=1)
 
 
 def add_week_radar(fig, df):
