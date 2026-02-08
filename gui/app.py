@@ -21,12 +21,23 @@ class AppGUI:
         self.total_records = 0
         self.processed_records = 0
         self.win = None
+        self.icon_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'logo.ico') # Path relative to project root
+        self._set_app_icon(self.root)
+
+    def _set_app_icon(self, window):
+        """设置窗口图标"""
+        if os.path.exists(self.icon_path):
+            try:
+                window.iconbitmap(self.icon_path)
+            except Exception as e:
+                print_log(f"图标加载失败: {e}", "WARN")
 
     def show_progress_window(self, title="正在处理"):
         """创建增强版进度条窗口"""
         win = tk.Toplevel(self.root)
         win.title(title)
         win.geometry("550x220")
+        self._set_app_icon(win)
         
         # 居中显示
         screen_width = win.winfo_screenwidth()
@@ -136,6 +147,7 @@ class AppGUI:
         dialog = tk.Toplevel(self.root)
         dialog.title("请选择工作表")
         dialog.geometry("450x420")
+        self._set_app_icon(dialog)
         
         screen_width = dialog.winfo_screenwidth()
         screen_height = dialog.winfo_screenheight()

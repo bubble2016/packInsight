@@ -100,7 +100,7 @@ def build_dashboard_html(fig, title, dest_list=None, generate_time=None):
     # 隐藏利润功能脚本 (使用 scripts.py 中的统一逻辑) + 保存长图功能
     # 注意：这里只保留保存长图的特定逻辑，隐私切换已统一
     hide_profit_script = """
-        // 保存长图功能（带进度提示）
+        // 保存长图功能（使用 dom-to-image 替代 html2canvas）
         function saveLongImage() {
             const btnGroup = document.querySelector('.btn-group');
             const saveBtn = document.getElementById('saveBtn');
@@ -109,52 +109,64 @@ def build_dashboard_html(fig, title, dest_list=None, generate_time=None):
             // 显示进度
             saveBtn.innerHTML = '⏳...';
             saveBtn.style.background = '#666';
-            btnGroup.style.pointerEvents = 'none';
             
-            // 准备截图
-            
+            // 滚动到顶部防止错位
+            window.scrollTo(0, 0);
+
+            // 过滤函数
+            const filterNode = (node) => {
+                if (node.classList && node.classList.contains('btn-group')) return false;
+                if (node.id === 'loading-overlay') return false;
+                if (node.tagName === 'CANVAS' && node.style.position === 'fixed') return false;
+                return true;
+            };
+
             setTimeout(() => {
-                html2canvas(document.body, {
-                    backgroundColor: '#1e1e2f',
-                    scale: 2,
-                    useCORS: true,
-                    logging: false,
-                    onclone: function(clonedDoc) {
-                        const clonedBtnGroup = clonedDoc.querySelector('.btn-group');
-                        if (clonedBtnGroup) clonedBtnGroup.style.display = 'none';
-                        // 在克隆层添加截图模式类，不影响主界面
-                        clonedDoc.body.classList.add('snapshot-mode');
+                // 获取设备像素比 (Retina 屏幕通常为 2 或更高)
+                const scale = window.devicePixelRatio || 1;
+                
+                // dom-to-image 默认导出 CSS 像素尺寸，需要手动放大以匹配屏幕清晰度
+                domtoimage.toPng(document.body, { 
+                    filter: filterNode,
+                    bgcolor: '#1e1e2f',
+                    quality: 1.0,
+                    width: document.body.scrollWidth * scale,
+                    height: document.body.scrollHeight * scale,
+                    style: {
+                        transform: 'scale(' + scale + ')',
+                        transformOrigin: 'top left',
+                        width: document.body.scrollWidth + 'px',
+                        height: document.body.scrollHeight + 'px'
                     }
-                }).then(canvas => {
+                })
+                .then(function (dataUrl) {
+                    const link = document.createElement('a');
+                    const cleanTitle = document.title.replace(/[\\\\/:*?"<>|]/g, '_');
+                    link.download = cleanTitle + '_长图.png';
+                    link.href = dataUrl;
+                    link.click();
+                    
                     saveBtn.innerHTML = '✅ 已保存';
                     saveBtn.style.background = '#00FF99';
                     saveBtn.style.color = '#000';
-                    
-                    const link = document.createElement('a');
-                    link.download = document.title + '_长图.png';
-                    link.href = canvas.toDataURL('image/png');
-                    link.click();
                     
                     setTimeout(() => {
                         saveBtn.innerHTML = originalText;
                         saveBtn.style.background = '';
                         saveBtn.style.color = '';
-                        btnGroup.style.pointerEvents = '';
-                        btnGroup.style.pointerEvents = '';
-                    }, 1500);
-                }).catch(err => {
+                    }, 2000);
+                })
+                .catch(function (error) {
+                    console.error('DOM-to-Image Error:', error);
                     saveBtn.innerHTML = '❌ 失败';
-                    saveBtn.style.background = '#FF3333';
-                    console.error('保存失败:', err);
+                    alert('保存失败: ' + error.message + '\\n如果图片不完整，可能因为内存不足。');
                     
                     setTimeout(() => {
                         saveBtn.innerHTML = originalText;
                         saveBtn.style.background = '';
-                        btnGroup.style.pointerEvents = '';
-                        btnGroup.style.pointerEvents = '';
-                    }, 2000);
+                    }, 3000);
                 });
-            }, 100);
+            }, 500);
         }
     """
     
@@ -165,7 +177,8 @@ def build_dashboard_html(fig, title, dest_list=None, generate_time=None):
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>西关打包站 - {title} 运营仪表板</title>
-    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <!-- 更换为 dom-to-image 库，解决 html2canvas 的 canvas 报错问题 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
     <style>
         {styles}
     </style>

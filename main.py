@@ -128,6 +128,12 @@ def main():
     try:
         from ctypes import windll
         windll.shcore.SetProcessDpiAwareness(1)
+        # 设置 AppUserModelID 以便在任务栏显示独立图标
+        try:
+            myappid = f'{APP_AUTHOR}.{APP_NAME}.version.{VERSION}'
+            windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+        except Exception as e:
+            print(f"Warning: Could not set AppUserModelID: {e}")
     except:
         pass
 
