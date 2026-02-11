@@ -11,6 +11,8 @@ from datetime import datetime
 from core.logger import print_log
 
 
+from gui.utils import center_window_on_console
+
 class AppGUI:
     """主 GUI 应用程序"""
     
@@ -23,6 +25,9 @@ class AppGUI:
         self.win = None
         self.icon_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'logo.ico') # Path relative to project root
         self._set_app_icon(self.root)
+        
+        # 将不可见的主窗口也居中于控制台，方便后续作为父窗口
+        center_window_on_console(self.root, 1, 1)
 
     def _set_app_icon(self, window):
         """设置窗口图标"""
@@ -39,12 +44,8 @@ class AppGUI:
         win.geometry("550x220")
         self._set_app_icon(win)
         
-        # 居中显示
-        screen_width = win.winfo_screenwidth()
-        screen_height = win.winfo_screenheight()
-        x = int((screen_width - 550) / 2)
-        y = int((screen_height - 220) / 2)
-        win.geometry(f"+{x}+{y}")
+        # 居中显示于控制台
+        center_window_on_console(win, 550, 220)
         
         win.attributes("-topmost", True)
         win.overrideredirect(True)  # 无边框风格
@@ -149,11 +150,8 @@ class AppGUI:
         dialog.geometry("450x420")
         self._set_app_icon(dialog)
         
-        screen_width = dialog.winfo_screenwidth()
-        screen_height = dialog.winfo_screenheight()
-        x = int((screen_width - 450) / 2)
-        y = int((screen_height - 420) / 2)
-        dialog.geometry(f"+{x}+{y}")
+        # 居中显示于控制台
+        center_window_on_console(dialog, 450, 420)
         dialog.attributes("-topmost", True)
         dialog.configure(bg='#1e1e1e')
         dialog.grab_set()  # 模态对话框，确保焦点

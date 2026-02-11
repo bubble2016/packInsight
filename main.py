@@ -107,6 +107,7 @@ def main():
         
         # 后置导入
         from gui.dialogs import show_file_dialog, check_file_access
+        from gui.utils import set_console_icon
         
         loader.finish("所有核心模块加载完毕！")
         time.sleep(0.5)
@@ -124,6 +125,12 @@ def main():
     print("=" * 75)
     print_log("系统环境自检通过，服务已就绪。", "BOOT")
     
+    # 尝试设置控制台图标
+    # 使用绝对路径以确保在任何目录下运行都能找到图标
+    project_root = os.path.dirname(os.path.abspath(__file__))
+    icon_abs_path = os.path.join(project_root, 'logo.ico')
+    set_console_icon(icon_abs_path)
+    
     # 解决高分屏模糊
     try:
         from ctypes import windll
@@ -132,6 +139,8 @@ def main():
         try:
             myappid = f'{APP_AUTHOR}.{APP_NAME}.version.{VERSION}'
             windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+            # 设置 AppID 后再次刷新图标，确保任务栏生效
+            set_console_icon(icon_abs_path) 
         except Exception as e:
             print(f"Warning: Could not set AppUserModelID: {e}")
     except:
@@ -146,7 +155,8 @@ def main():
 
     # --- 交互式选择文件 ---
     print_log("等待用户选择 Excel 文件...", "WAIT")
-    file_path = show_file_dialog()
+    # 传入 app.root 以便居中于控制台(因为 app.root 已经绑定了控制台中心)
+    file_path = show_file_dialog(parent=app.root)
     
     if not file_path:
         print_log("用户取消了文件选择，系统下线。", "WARN")
@@ -156,7 +166,7 @@ def main():
     print_log(f"已捕获文件目标: {os.path.basename(file_path)}", "FILE")
 
     # --- 文件占用检测 ---
-    if not check_file_access(file_path):
+    if not check_file_access(file_path, parent=app.root):
         print_log("无法获取文件权限，程序退出。", "STOP")
         sys.exit()
 

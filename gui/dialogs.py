@@ -8,13 +8,17 @@ from tkinter import filedialog, messagebox
 from core.logger import print_log, error_logger
 
 
-def show_file_dialog():
+def show_file_dialog(parent=None):
     """显示文件选择对话框"""
     print_log("等待用户选择 Excel 文件...", "WAIT")
     
+    # 尝试使用父窗口，如果存在则对话框会居中于父窗口
+    kwargs = {'parent': parent} if parent else {}
+    
     file_path = filedialog.askopenfilename(
         title="请选择 '发货详单' 文件",
-        filetypes=[("Excel files", "*.xlsx *.xlsm *.xls")]
+        filetypes=[("Excel files", "*.xlsx *.xlsm *.xls")],
+        **kwargs
     )
     
     if file_path:
@@ -25,11 +29,14 @@ def show_file_dialog():
     return file_path
 
 
-def check_file_access(path):
+def check_file_access(path, parent=None):
     """检查文件是否可访问（未被占用）"""
     print_log("正在进行文件占用检测...", "CHECK")
     max_retries = 3
     retry_count = 0
+    
+    # kwargs for messagebox
+    msg_kwargs = {'parent': parent} if parent else {}
     
     while True:
         try:
@@ -47,7 +54,8 @@ def check_file_access(path):
             )
             is_retry = messagebox.askretrycancel(
                 "文件被占用", 
-                f"检测到 Excel 文件正在被打开！\n\n请先【关闭】Excel 文件，然后点击【重试】。\n({os.path.basename(path)})\n\n尝试次数: {retry_count}/{max_retries}"
+                f"检测到 Excel 文件正在被打开！\n\n请先【关闭】Excel 文件，然后点击【重试】。\n({os.path.basename(path)})\n\n尝试次数: {retry_count}/{max_retries}",
+                **msg_kwargs
             )
             if not is_retry:
                 return False
@@ -58,6 +66,8 @@ def check_file_access(path):
                 exception=e,
                 suggestion="请检查文件是否存在、是否有读取权限"
             )
+            # error_logger currently creates its own root, so we can't easily pass parent unless we update it.
+            # But the requirement is mainly about the selection window.
             error_logger.show_error_dialog(
                 "📛 文件访问错误",
                 f"无法访问文件:\n{e}",
