@@ -1,6 +1,6 @@
 # 打包站智能分析系统 (PackInsight) v8.3
 
-一款专为物流打包中转站打造的现代化智能数据分析平台。通过全自动化的数据清洗、多维度成本核算与交互式可视化报表，助力运营决策更加精准高效。
+一款专为废纸打包站打造的现代化智能数据分析平台。通过全自动化的数据清洗、多维度成本核算与交互式可视化报表，助力运营决策更加精准高效。
 
 ![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
