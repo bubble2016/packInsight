@@ -1,6 +1,6 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
-打包站智能分析系统 By 李小泡 v8.3 (模块化重构版)
+打包站智能分析系统 By 李小泡 v9.0 (模块化重构版)
 核心逻辑主入口 (已优化冷启动体验)
 """
 import os
@@ -60,7 +60,32 @@ def get_desktop_path():
     """获取真实桌面路径"""
     return os.path.join(os.path.expanduser("~"), 'Desktop')
 
+
+def setup_console_utf8():
+    """统一控制台编码为 UTF-8，避免 Windows 默认代码页导致中文乱码。"""
+    if os.name != 'nt':
+        return
+
+    try:
+        # 切换当前控制台代码页到 UTF-8（65001）
+        os.system('chcp 65001 >nul')
+    except Exception:
+        pass
+
+    for stream_name in ('stdin', 'stdout', 'stderr'):
+        stream = getattr(sys, stream_name, None)
+        if stream is None:
+            continue
+        reconfigure = getattr(stream, 'reconfigure', None)
+        if callable(reconfigure):
+            try:
+                reconfigure(encoding='utf-8', errors='replace')
+            except Exception:
+                pass
+
 def main():
+    setup_console_utf8()
+
     # --- 1. 极速启动区 (仅使用标准库) ---
     os.system('cls' if os.name == 'nt' else 'clear')
     print("=" * 75)
@@ -399,3 +424,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

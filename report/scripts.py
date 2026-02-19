@@ -9,12 +9,30 @@ def get_base_scripts():
         function printReport() { window.print(); }
         
         function scrollToTop() {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+        }
+
+        function initDynamicStyles() {
+            // KPI 动态颜色：通过 data-color 注入，避免模板内联样式
+            document.querySelectorAll('.kpi-val[data-color]').forEach(el => {
+                const color = el.getAttribute('data-color');
+                if (color) {
+                    el.style.setProperty('--kpi-color', color);
+                }
+            });
+
+            // 数据条宽度：通过 data-width 注入并触发动画
+            document.querySelectorAll('.data-bar[data-width]').forEach((el, index) => {
+                const width = parseFloat(el.getAttribute('data-width'));
+                const safeWidth = Number.isFinite(width) ? Math.max(0, Math.min(100, width)) : 0;
+                el.style.setProperty('--width', safeWidth + '%');
+                setTimeout(() => el.classList.add('animate'), Math.min(index * 25, 400));
+            });
         }
 
         
         function captureScreenshot() {
-            const btnGroup = document.querySelector('.btn-group');
             const saveBtn = document.querySelector('.btn-shot');
             const originalText = saveBtn.innerHTML;
             
@@ -107,7 +125,7 @@ def get_base_scripts():
                  // 简单的启发式：如果是数字且带有金额单位，或者纯数字（并在标题附近）
                  // 匹配格式：xx.x 万, xx.x 元, xx%, 纯数字
                  // 使用 raw string 避免 python 转义警告
-                 const isMoneyLike = /^[0-9,\\.]+\s*(万|元)$/.test(content);
+                 const isMoneyLike = /^[0-9,\\.]+\\s*(万|元)$/.test(content);
                  const isPercent = /^[0-9,\\.]+%$/.test(content);
                  const isNumber = /^[0-9,\\.]+$/.test(content);
                  
@@ -158,13 +176,19 @@ def get_base_scripts():
             setInterval(update, 1000);
             update();
         }
-        window.addEventListener('load', startClock);
+        window.addEventListener('load', () => {
+            initDynamicStyles();
+            startClock();
+        });
     """
 
 def get_particle_animation_js():
     """获取粒子背景动画脚本"""
     return """
         (function initParticles() {
+            if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                return;
+            }
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             canvas.style.position = 'fixed';
@@ -238,6 +262,9 @@ def get_counter_animation_js():
     """获取抽奖式数字滚动动画脚本（老虎机效果）"""
     return """
         (function initSlotMachineAnimation() {
+            if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                return;
+            }
             /**
              * 抽奖机式数字滚动动画
              * @param {Element} element - 要动画的文本元素
@@ -281,7 +308,7 @@ def get_counter_animation_js():
                         element.textContent = formatNumber(randomValue) + suffix;
                         
                         // 添加闪烁效果
-                        element.style.opacity = 0.7 + Math.random() * 0.3;
+                        element.style.opacity = 0.9 + Math.random() * 0.1;
                         
                         requestAnimationFrame(update);
                     } else if (elapsed < totalDuration) {
@@ -294,7 +321,7 @@ def get_counter_animation_js():
                         const currentValue = lastRandomBase + (targetValue - lastRandomBase) * easedProgress;
                         
                         element.textContent = formatNumber(currentValue) + suffix;
-                        element.style.opacity = 0.7 + easedProgress * 0.3;
+                        element.style.opacity = 0.9 + easedProgress * 0.1;
                         
                         requestAnimationFrame(update);
                     } else {
@@ -303,11 +330,11 @@ def get_counter_animation_js():
                         element.style.opacity = '1';
                         
                         // 添加完成后的高亮闪烁效果
-                        element.style.transition = 'filter 0.3s';
-                        element.style.filter = 'brightness(1.5) drop-shadow(0 0 10px currentColor)';
+                        element.style.transition = 'filter 0.45s ease-out';
+                        element.style.filter = 'brightness(1.08) drop-shadow(0 0 4px currentColor)';
                         setTimeout(() => {
                             element.style.filter = '';
-                        }, 500);
+                        }, 420);
                     }
                 }
                 
@@ -405,15 +432,28 @@ def get_stagger_animation_js():
     """获取级联渐入动画及霓虹脉冲脚本"""
     return """
         (function initStaggeredAnimation() {
-            window.addEventListener('load', () => {
-                // Remove Loading Screen
+            let hasStarted = false;
+
+            function hideLoader(force = false) {
                 const loader = document.getElementById('loading-overlay');
-                if (loader) {
-                    setTimeout(() => {
-                        loader.style.opacity = '0';
-                        setTimeout(() => { loader.style.display = 'none'; }, 500);
-                    }, 600);
+                if (!loader) return;
+                if (force) {
+                    loader.style.display = 'none';
+                    return;
                 }
+                loader.style.opacity = '0';
+                setTimeout(() => { loader.style.display = 'none'; }, 500);
+            }
+
+            function start() {
+                if (hasStarted) return;
+                hasStarted = true;
+
+                const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                // 优先移除加载遮罩，避免因外链资源导致 window.load 延迟
+                if (reduceMotion) hideLoader(true);
+                else setTimeout(() => hideLoader(false), 300);
+                if (reduceMotion) return;
 
                 setTimeout(() => {
                     // Plotly图表级联动画
@@ -443,13 +483,20 @@ def get_stagger_animation_js():
                                           (el.getAttribute('class') && el.getAttribute('class').includes('number'));
                             
                             if (isKPI) {
-                                el.style.filter = 'drop-shadow(0 0 5px ' + fill + ')';
-                                el.style.transition = 'filter 1s alternate infinite';
+                                el.style.filter = 'drop-shadow(0 0 3px ' + fill + ')';
+                                el.style.animation = 'neonPulse 3.2s ease-in-out infinite';
                             }
                         });
                     }, 1000);
                     
                 }, 300);
-            });
+            }
+
+            // DOM 就绪即可启动，避免卡在“系统加载中...”
+            document.addEventListener('DOMContentLoaded', start, { once: true });
+            // 双保险：部分环境 DOMContentLoaded 触发异常时仍可在 load 启动
+            window.addEventListener('load', start, { once: true });
+            // 最终兜底：4 秒后强制移除遮罩
+            setTimeout(() => hideLoader(true), 4000);
         })();
     """

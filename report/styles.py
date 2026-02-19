@@ -6,6 +6,7 @@ HTML 报告样式定义 (CSS)
 def get_base_styles():
     """获取基础页面样式"""
     return """
+        :root { --safe-bottom: env(safe-area-inset-bottom, 0px); }
         body { font-family: 'Segoe UI', 'Roboto', 'Microsoft YaHei', sans-serif; margin: 40px; background:radial-gradient(circle at top left, #1a1a2e, #16213e); color: #e0e0e0; line-height: 1.6; min-height: 100vh; }
         .container { max-width: 1400px; margin: 0 auto; animation: fadeIn 1s ease-out; }
         
@@ -56,7 +57,27 @@ def get_base_styles():
         
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
         
-        .footer { text-align: center; margin-top: 60px; color: #555; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; }
+        .footer { text-align: center; margin-top: 60px; color: #9aa3ad; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; }
+
+        @media (max-width: 1200px) {
+            .kpi-container { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (max-width: 900px) {
+            body { margin: 16px; }
+            .header { padding: 24px 16px; margin-bottom: 24px; }
+            .header h1 { font-size: 1.8em; letter-spacing: 1px; }
+            .section-title { font-size: 1.2em; margin: 30px 0 16px 0; }
+            .grid-2 { grid-template-columns: 1fr; gap: 16px; }
+            .kpi-container { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+            .kpi-val { font-size: 24px; }
+            .card { padding: 16px; }
+            table { font-size: 12px; }
+            th, td { padding: 10px; }
+            .footer { margin-top: 36px; letter-spacing: 1px; }
+        }
+        @media (max-width: 600px) {
+            .kpi-container { grid-template-columns: 1fr; }
+        }
     """
 
 def get_button_styles():
@@ -102,8 +123,37 @@ def get_button_styles():
         
         .btn-privacy { background: rgba(255, 0, 204, 0.9); color: #fff; box-shadow: 0 5px 15px rgba(255, 0, 204, 0.3); }
         .btn-privacy:hover { box-shadow: -6px 6px 20px #FF00CC; }
+        .btn:focus-visible {
+            outline: 3px solid #ffffff;
+            outline-offset: 2px;
+            box-shadow: 0 0 0 3px rgba(0, 204, 255, 0.4);
+        }
 
-        /* SNAPSHOT HELPER: Disable animations during capture */
+        @media (max-width: 900px) {
+            .btn-group {
+                top: auto;
+                right: 12px;
+                left: 12px;
+                bottom: calc(12px + var(--safe-bottom));
+                transform: none;
+                z-index: 1100;
+                flex-direction: row;
+                gap: 8px;
+            }
+            .btn {
+                min-width: 0;
+                flex: 1;
+                border-radius: 10px;
+                padding: 10px 12px;
+                writing-mode: horizontal-tb;
+                text-orientation: mixed;
+                letter-spacing: 0;
+                font-size: 13px;
+            }
+            .btn:hover { transform: none; min-width: 0; }
+        }
+
+        /* 截图辅助：截图期间禁用动画 */
         .no-anim, .no-anim * { animation: none !important; transition: none !important; opacity: 1 !important; transform: none !important; }
     """
 
@@ -144,8 +194,56 @@ def get_card_styles():
         }
         .kpi-box:hover::after { transform: scaleX(1); }
 
-        .kpi-val { font-size: 32px; font-weight: 800; margin: 10px 0; text-shadow: 0 0 10px rgba(0,0,0,0.3); }
+        .kpi-val { font-size: 32px; font-weight: 800; margin: 10px 0; text-shadow: 0 0 10px rgba(0,0,0,0.3); color: var(--kpi-color, inherit); }
         .kpi-lbl { color: #aaa; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* --- 每日峰值模块 --- */
+        .daily-section-title { margin-top: 30px; }
+        .daily-highlow-row { display: flex; gap: 30px; justify-content: space-around; }
+        .daily-col { text-align: center; }
+        .daily-col-hot { color: #ff5e62; }
+        .daily-col-profit { color: #00FF99; }
+        .daily-col-cool { color: #00CCFF; }
+        .daily-label { font-size: 12px; color: #aaa; margin-bottom: 5px; }
+        .daily-day { font-size: 20px; font-weight: bold; margin-bottom: 5px; }
+        .daily-value { font-size: 28px; font-weight: 800; }
+        .daily-unit { font-size: 14px; }
+        .daily-note { font-size: 12px; color: #888; margin-top: 5px; }
+        .daily-divider { width: 1px; background: rgba(255,255,255,0.1); }
+
+        /* --- 成本透视模块 --- */
+        .cost-grid { margin-top: 25px; }
+        .cost-metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; font-size: 13px; }
+        .cost-metric-card { padding: 15px; border-radius: 8px; }
+        .cost-metric-card-danger { background: rgba(255,51,51,0.1); }
+        .cost-metric-card-warn { background: rgba(255,255,51,0.1); }
+        .cost-metric-card-success { background: rgba(0,255,153,0.1); }
+        .cost-metric-title-danger { color: #FF3333; }
+        .cost-metric-title-warn { color: #FFFF33; }
+        .cost-metric-title-success { color: #00FF99; }
+        .cost-metric-text { margin: 8px 0 0 0; color: #aaa; line-height: 1.5; }
+        .cost-metric-value { font-size: 24px; font-weight: bold; }
+        .cost-metric-value-good { color: #00FF99; }
+        .cost-metric-value-mid { color: #FFFF33; }
+        .cost-metric-value-high { color: #FF3333; }
+
+        /* --- 预警与建议模块 --- */
+        .warning-title { color:#FF3333; margin-top:30px; }
+        .warning-subtitle { color:#FF3333; margin-top:20px; }
+        .warning-card { border: 1px solid #FF3333; }
+        .warning-card-strong { border: 1px solid #FF3333; box-shadow: 0 0 20px rgba(255, 51, 51, 0.2); }
+        .warning-loss-value { color:#FF3333; font-weight:bold; }
+        .warning-ok { color:#00FF99; margin-top:20px; }
+        .suggestion-card { margin-top: 30px; background: linear-gradient(to right, #2d2d2d, #3d3d3d); }
+        .suggestion-title { color:#FF00CC; }
+        .suggestion-list { line-height: 2.2; color: #ddd; list-style-type: none; padding: 0 20px; }
+        .suggestion-item { margin-bottom: 12px; }
+
+        @media (max-width: 900px) {
+            .daily-highlow-row { flex-direction: column; gap: 14px; }
+            .daily-divider { width: 100%; height: 1px; }
+            .cost-metric-grid { grid-template-columns: 1fr; gap: 12px; }
+        }
     """
 
 def get_table_styles():
@@ -171,7 +269,21 @@ def get_table_styles():
         /* 数据条样式 */
         .bar-container { display: flex; align-items: center; gap: 8px; }
         .bar-bg { flex-grow: 1; height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; min-width: 60px; }
-        .data-bar { height: 100%; border-radius: 3px; animation: expandWidth 1s ease-out forwards; width: 0; }
+        .bar-bg-sm { min-width: 40px; }
+        .bar-bg-xs { min-width: 30px; }
+        .data-bar {
+            height: 100%;
+            border-radius: 3px;
+            width: 0;
+            background: var(--bar-gradient, linear-gradient(90deg, #00C9FF, #92FE9D));
+        }
+        .data-bar.animate { animation: expandWidth 1s ease-out forwards; }
+        .bar-cat-weight { --bar-gradient: linear-gradient(90deg, #00C9FF, #92FE9D); }
+        .bar-cat-profit { --bar-gradient: linear-gradient(90deg, #ff9a9e, #fecfef); }
+        .bar-dest-weight { --bar-gradient: linear-gradient(90deg, #F9D423, #FF4E50); }
+        .bar-dest-count { --bar-gradient: linear-gradient(90deg, #89f7fe, #66a6ff); }
+        .bar-week-weight { --bar-gradient: linear-gradient(90deg, #A8CABA, #5D4157); }
+        .bar-vehicle-weight { --bar-gradient: linear-gradient(90deg, #ff9966, #ff5e62); }
         @keyframes expandWidth { from { width: 0; } to { width: var(--width); } }
     """
 
@@ -188,6 +300,15 @@ def get_animation_styles():
         .kpi-box:nth-child(5) { animation-delay: 0.5s; }
         .card:nth-child(odd) { animation-delay: 0.6s; }
         .card:nth-child(even) { animation-delay: 0.7s; }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
     """
 
 def get_print_styles():
